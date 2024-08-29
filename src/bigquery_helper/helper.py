@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 class BigQueryHelper:
     """
     Helper class for BigQuery operations.
+
+    Example:
+        >>> helper = BigQueryHelper('my_project_id', 'path/to/credentials.json')
+        >>> helper.execute_query('SELECT * FROM my_table')
     """
     def __init__(self, project_id: str, credentials: Union[str, dict, service_account.Credentials]):
         """
@@ -22,6 +26,9 @@ class BigQueryHelper:
         :param credentials: Either a path to a service account JSON file,
                             a dictionary containing service account info,
                             or a Credentials object.
+
+        Example:
+            >>> helper = BigQueryHelper('my_project_id', 'path/to/credentials.json')
         """
         self.project_id = project_id
         self.credentials = self._get_credentials(credentials)
@@ -32,12 +39,23 @@ class BigQueryHelper:
         Set the project ID.
 
         :param project_id: The Google Cloud project ID.
+
+        Example:
+            >>> helper.set_project_id('new_project_id')
         """
         self.project_id = project_id
         self.client = bigquery.Client(project=self.project_id, credentials=self.credentials)
 
     @staticmethod
     def _get_credentials(credentials):
+        """
+        Get credentials from various input types.
+
+        :param credentials: Either a path to a service account JSON file,
+                            a dictionary containing service account info,
+                            or a Credentials object.
+        :return: Credentials object
+        """
         if isinstance(credentials, str):
             return service_account.Credentials.from_service_account_file(
                 credentials,
@@ -59,6 +77,11 @@ class BigQueryHelper:
 
         :param query: SQL query to execute.
         :return: RowIterator containing query results, or None if the query fails.
+
+        Example:
+            >>> result = helper.execute_query('SELECT * FROM my_table')
+            >>> for row in result:
+            ...     print(row)
         """
         try:
             query_job = self.client.query(query)
@@ -73,7 +96,10 @@ class BigQueryHelper:
 
         :param table_id: The ID of the table to insert rows into.
         :param rows_to_insert: List of dictionaries representing rows to insert.
-        :raises GoogleCloudError: If the insertion fails.
+
+        Example:
+            >>> rows = [{'column1': 'value1', 'column2': 2}, {'column1': 'value2', 'column2': 3}]
+            >>> helper.insert_rows('my_table', rows)
         """
         try:
             errors = self.client.insert_rows_json(table_id, rows_to_insert)
@@ -92,6 +118,10 @@ class BigQueryHelper:
 
         :param query: SQL query to execute.
         :return: DataFrame containing query results, or None if the query fails.
+
+        Example:
+            >>> df = helper.query_to_dataframe('SELECT * FROM my_table')
+            >>> print(df.head())
         """
         result = self.execute_query(query)
         return result.to_dataframe() if result else None
